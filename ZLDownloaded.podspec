@@ -1,7 +1,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'ZLDownloaded'
-  s.version          = '1.0.1'
+  s.version          = '1.0.0'
   s.swift_version    = '5.0'
   s.summary          = 'ZLDownloaded is a download framework.'
 
@@ -13,13 +13,7 @@ Pod::Spec.new do |s|
 
   s.ios.deployment_target = '9.0'
 
-  s.subspec 'NewDownload' do |p|
-    p.source_files   = 'NewDownload/**/*.{h,m,c,cpp,mm,swift}'
-  end
-
-  s.subspec 'NewDownloadOCBridge' do |p|
-    p.source_files   = 'NewDownloadOCBridge/*.{h,m,c,cpp,mm,swift}'
-  end
+  s.source_files = 'Downloaded/Download/**/*.{h,m,c,cpp,mm,swift}'
 
   s.requires_arc = true
   s.frameworks = 'CFNetwork'
