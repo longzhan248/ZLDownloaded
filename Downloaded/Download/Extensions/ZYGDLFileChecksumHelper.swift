@@ -56,6 +56,14 @@ public enum ZYGDLFileChecksumHelper {
                 return
             }
             
+            // 如果是一个文件夹路径且存在的话，则直接校验成功
+            var directoryExists = ObjCBool.init(false)
+            let fileExists = FileManager.default.fileExists(atPath: filePath, isDirectory: &directoryExists)
+            if fileExists && directoryExists.boolValue {
+                completion(.success(true))
+                return
+            }
+            
             // 创建文件的 URL。
             let url = URL(fileURLWithPath: filePath)
             

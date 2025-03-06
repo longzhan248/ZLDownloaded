@@ -174,6 +174,14 @@ extension ZYGDLCache {
         return fileManager.fileExists(atPath: path)
     }
     
+    // // 检查 URL 对应的路径是否存在。
+    public func filePathExists(url: ZYGDLURLConvertible) -> Bool {
+        guard let path = filePath(url: url) else { return false }
+        var directoryExists = ObjCBool.init(false)
+        let fileExists = fileManager.fileExists(atPath: path, isDirectory: &directoryExists)
+        return fileExists && directoryExists.boolValue
+    }
+    
     // 清除磁盘缓存的方法。
     public func clearDiskCache(onMainQueue: Bool = true, handle: Handler<ZYGDLCache>? = nil) {
         ioQueue.async {

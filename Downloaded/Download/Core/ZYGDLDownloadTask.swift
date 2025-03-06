@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import ZIPFoundation
 
 public class ZYGDLDownloadTask: ZYGDLTask<ZYGDLDownloadTask> {
     
@@ -543,7 +544,29 @@ extension ZYGDLDownloadTask {
         guard let statusCode = (task.response as? HTTPURLResponse)?.statusCode, acceptableStatusCodes.contains(statusCode) else {
             return
         }
-        cache.storeFile(at: location, to: URL(fileURLWithPath: filePath))
+        
+        var sourceURL = location
+        let destinationURL = URL(fileURLWithPath: filePath)
+        
+        if let pathExtension = pathExtension {
+            let fileType = ZYGDLFileType(fileExtension: pathExtension)
+            switch fileType {
+            case .zip:
+                let fileManager = FileManager()
+                sourceURL = URL(fileURLWithPath: location.path)
+                
+                do {
+                    try fileManager.createDirectory(at: destinationURL, withIntermediateDirectories: true, attributes: nil)
+                    try fileManager.unzipItem(at: sourceURL, to: destinationURL)
+                } catch {
+                    manager?.log(.error("Extraction of ZIP archive failed with error:\(error)", error: error))
+                }
+            default:
+                break
+            }
+        }
+        
+        cache.storeFile(at: sourceURL, to: URL(fileURLWithPath: filePath))
         cache.removeTmpFile(tmpFileName)
     }
     

@@ -104,6 +104,27 @@ public enum ZYGDLStatus: String {
     case willRemove
 }
 
+// 定义文件类型枚举
+enum ZYGDLFileType {
+    case zip
+    case mp4
+    case text
+    case json
+    case other(String)  // 其他未知类型保存原始扩展名
+    
+    // 根据文件扩展名初始化
+    init(fileExtension: String) {
+        let ext = fileExtension.lowercased()
+        switch ext {
+        case "zip": self = .zip
+        case "mp4": self = .mp4
+        case "txt": self = .text
+        case "json": self = .json
+        default: self = .other(fileExtension)
+        }
+    }
+}
+
 // 用于包装其他类型。
 public struct ZYGDLWrapper<Base> {
     // 用于存储被包装的对象。
