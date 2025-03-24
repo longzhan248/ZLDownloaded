@@ -823,7 +823,7 @@ extension ZYGDLSessionManager {
             }
             //  处理mananger状态
             if !self.shouldComplete() {
-                self.shouldComplete()
+                self.shouldSuspend()
             }
         })
     }

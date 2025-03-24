@@ -157,7 +157,7 @@ public class ZYGDLDownloadTask: ZYGDLTask<ZYGDLDownloadTask> {
     public required init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let superDecoder = try container.superDecoder()
-        try super.init(from: decoder)
+        try super.init(from: superDecoder)
         resumeData = try container.decodeIfPresent(Data.self, forKey: .resumeData)
         if let responseData = try container.decodeIfPresent(Data.self, forKey: .response) {
             if #available(iOS 11.0, *) {
