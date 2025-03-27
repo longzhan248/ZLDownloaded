@@ -34,14 +34,10 @@ public class ZYGDLDownloadTask: ZYGDLTask<ZYGDLDownloadTask> {
     // 用于获取和设置 _sessionTask。
     internal var sessionTask: URLSessionDownloadTask? {
         get {
-            protectedDownloadState.read { _ in
-                _sessionTask
-            }
+            protectedDownloadState.read { _ in _sessionTask }
         }
         set {
-            protectedDownloadState.read { _ in
-                _sessionTask = newValue
-            }
+            protectedDownloadState.read { _ in _sessionTask = newValue }
         }
     }
     
@@ -51,9 +47,7 @@ public class ZYGDLDownloadTask: ZYGDLTask<ZYGDLDownloadTask> {
             protectedDownloadState.directValue.response
         }
         set {
-            protectedDownloadState.write {
-                $0.response = newValue
-            }
+            protectedDownloadState.write { $0.response = newValue }
         }
     }
     
@@ -95,9 +89,7 @@ public class ZYGDLDownloadTask: ZYGDLTask<ZYGDLDownloadTask> {
             protectedDownloadState.directValue.resumeData
         }
         set {
-            protectedDownloadState.write {
-                $0.resumeData = newValue
-            }
+            protectedDownloadState.write { $0.resumeData = newValue }
         }
     }
     
@@ -112,9 +104,7 @@ public class ZYGDLDownloadTask: ZYGDLTask<ZYGDLDownloadTask> {
             protectedDownloadState.directValue.shouldValidateFile
         }
         set {
-            protectedDownloadState.write {
-                $0.shouldValidateFile = newValue
-            }
+            protectedDownloadState.write { $0.shouldValidateFile = newValue }
         }
     }
     
@@ -154,7 +144,7 @@ public class ZYGDLDownloadTask: ZYGDLTask<ZYGDLDownloadTask> {
     }
     
     // 实现解码方法。
-    public required init(from decoder: any Decoder) throws {
+    internal required init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let superDecoder = try container.superDecoder()
         try super.init(from: superDecoder)
@@ -181,6 +171,10 @@ public class ZYGDLDownloadTask: ZYGDLTask<ZYGDLDownloadTask> {
             self.sessionTask?.resume()
         }
     }
+    
+    internal override func execute(_ executer: ZYGDLExecuter<ZYGDLDownloadTask>?) {
+        executer?.execute(self)
+    }
 }
 
 // MARK: - control
@@ -189,7 +183,6 @@ extension ZYGDLDownloadTask {
     // 用于开始下载任务。
     internal func download() {
         cache.createDirectory()
-        
         guard let manager = manager else { return }
         switch status {
         case .waiting, .suspended, .failed:
@@ -210,8 +203,7 @@ extension ZYGDLDownloadTask {
         case .running:
             status = .running
             executeControl()
-        default:
-            break
+        default: break
         }
     }
     
@@ -221,7 +213,7 @@ extension ZYGDLDownloadTask {
         protectedState.write {
             $0.speed = 0
             if $0.startDate == 0 {
-                $0.startDate = Date().timeIntervalSince1970
+                 $0.startDate = Date().timeIntervalSince1970
             }
         }
         error = nil
@@ -232,7 +224,8 @@ extension ZYGDLDownloadTask {
     private func start(fileExists: Bool) {
         if fileExists {
             manager?.log(.downloadTask("file already exists", task: self))
-            if let fileInfo = try? FileManager.default.attributesOfItem(atPath: cache.filePath(fileName: fileName)!), let length = fileInfo[.size] as? Int64 {
+            if let fileInfo = try? FileManager.default.attributesOfItem(atPath: cache.filePath(fileName: fileName)!),
+                let length = fileInfo[.size] as? Int64 {
                 progress.totalUnitCount = length
             }
             executeControl()
@@ -240,7 +233,8 @@ extension ZYGDLDownloadTask {
                 self.didComplete(.local)
             }
         } else {
-            if let resumeData = resumeData, cache.retrieveTmpFile(tmpFileName) {
+            if let resumeData = resumeData,
+                cache.retrieveTmpFile(tmpFileName) {
                 if #available(iOS 10.2, *) {
                     sessionTask = session?.downloadTask(withResumeData: resumeData)
                 } else if #available(iOS 10.0, *) {
@@ -266,7 +260,7 @@ extension ZYGDLDownloadTask {
     // 用于暂停下载任务。
     internal func suspend(onMainQueue: Bool = true, handler: Handler<ZYGDLDownloadTask>? = nil) {
         guard status == .running || status == .waiting else { return }
-        controlExecuter = ZYGDLExecuter(onMainQueue: onMainQueue, handle: handler)
+        controlExecuter = ZYGDLExecuter(onMainQueue: onMainQueue, handler: handler)
         if status == .running {
             status = .willSuspend
             sessionTask?.cancel(byProducingResumeData: { _ in })
@@ -281,7 +275,7 @@ extension ZYGDLDownloadTask {
     // 用于取消下载任务。
     internal func cancel(onMainQueue: Bool = true, handler: Handler<ZYGDLDownloadTask>? = nil) {
         guard status != .succeeded else { return }
-        controlExecuter = ZYGDLExecuter(onMainQueue: onMainQueue, handle: handler)
+        controlExecuter = ZYGDLExecuter(onMainQueue: onMainQueue, handler: handler)
         if status == .running {
             status = .willCancel
             sessionTask?.cancel()
@@ -296,7 +290,7 @@ extension ZYGDLDownloadTask {
     // 用于移除下载任务。
     internal func remove(completely: Bool = false, onMainQueue: Bool = true, handler: Handler<ZYGDLDownloadTask>? = nil) {
         isRemoveCompletely = completely
-        controlExecuter = ZYGDLExecuter(onMainQueue: onMainQueue, handle: handler)
+        controlExecuter = ZYGDLExecuter(onMainQueue: onMainQueue, handler: handler)
         if status == .running {
             status = .willRemove
             sessionTask?.cancel()
@@ -320,18 +314,18 @@ extension ZYGDLDownloadTask {
     
     private func validateFile() {
         guard let validateHandler = self.validateExecuter else { return }
-        
+
         if !shouldValidateFile {
             validateHandler.execute(self)
             return
         }
-        
+
         guard let verificationCode = verificationCode else { return }
-        
-        ZYGDLFileChecksumHelper.validateFile(filePath, code: verificationCode, type: verificationType) { [weak self] (resule) in
+
+        ZYGDLFileChecksumHelper.validateFile(filePath, code: verificationCode, type: verificationType) { [weak self] (result) in
             guard let self = self else { return }
             self.shouldValidateFile = false
-            if case let .failure(error) = resule {
+            if case let .failure(error) = result {
                 self.validation = .incorrect
                 self.manager?.log(.error("file validation failed, url: \(self.url)", error: error))
             } else {
@@ -383,7 +377,6 @@ extension ZYGDLDownloadTask {
     // 用于根据中断类型确定任务状态。
     private func determineStatus(with interruptType: InterruptType) {
         var fromRunning = true
-        
         switch interruptType {
         case let .error(error):
             self.error = error
@@ -393,7 +386,7 @@ extension ZYGDLDownloadTask {
                 cache.storeTmpFile(tmpFileName)
             }
             if let _ = (error as NSError).userInfo[NSURLErrorBackgroundTaskCancelledReasonKey] as? Int {
-                tempStatus = .succeeded
+                tempStatus = .suspended
             }
             if let urlError = error as? URLError, urlError.code != URLError.cancelled {
                 tempStatus = .failed
@@ -438,27 +431,27 @@ extension ZYGDLDownloadTask {
                              onMainQueue: Bool = true,
                              handler: @escaping Handler<ZYGDLDownloadTask>) -> Self {
         operationQueue.async {
-            let (verificationCode, verificationType) = self.protectedState.read {
-                ($0.verificationCode, $0.verificationType)
-            }
-            if verificationCode == code &&
-                verificationType == type &&
-                self.validation != .unkown {
-                self.shouldValidateFile = false
-            } else {
-                self.shouldValidateFile = true
-                self.protectedState.write {
-                    $0.verificationCode = code
-                    $0.verificationType = type
-                }
-                self.manager?.storeTasks()
-            }
-            self.validateExecuter = ZYGDLExecuter(onMainQueue: onMainQueue, handle: handler)
-            if self.status == .succeeded {
-                self.validateFile()
-            }
-        }
-        return self
+           let (verificationCode, verificationType) = self.protectedState.read {
+                                                           ($0.verificationCode, $0.verificationType)
+                                                       }
+           if verificationCode == code &&
+               verificationType == type &&
+               self.validation != .unkown {
+               self.shouldValidateFile = false
+           } else {
+               self.shouldValidateFile = true
+               self.protectedState.write {
+                   $0.verificationCode = code
+                   $0.verificationType = type
+               }
+               self.manager?.storeTasks()
+           }
+           self.validateExecuter = ZYGDLExecuter(onMainQueue: onMainQueue, handler: handler)
+           if self.status == .succeeded {
+               self.validateFile()
+           }
+       }
+       return self
     }
     
     // 用于执行任务完成的处理程序。
@@ -500,7 +493,7 @@ extension ZYGDLDownloadTask {
         
         let dataCount = progress.completedUnitCount
         let lastData: Int64 = progress.userInfo[.fileCompletedCountKey] as? Int64 ?? 0
-        
+
         if dataCount > lastData {
             let speed = dataCount - lastData
             updateTimeRemaining(speed)
@@ -541,50 +534,50 @@ extension ZYGDLDownloadTask {
     
     internal func didFinishDownloading(task: URLSessionDownloadTask,
                                        to location: URL) {
-        guard let statusCode = (task.response as? HTTPURLResponse)?.statusCode, acceptableStatusCodes.contains(statusCode) else {
-            return
-        }
-        
-        var sourceURL = location
-        let destinationURL = URL(fileURLWithPath: filePath)
-        
+        guard let statusCode = (task.response as? HTTPURLResponse)?.statusCode,
+            acceptableStatusCodes.contains(statusCode)
+            else { return }
         if let pathExtension = pathExtension {
-            let fileType = ZYGDLFileType(fileExtension: pathExtension)
+            let fileType = ZYGDLFileType(fileExtension:pathExtension)
             switch fileType {
             case .zip:
                 let fileManager = FileManager()
-                sourceURL = URL(fileURLWithPath: location.path)
-                
+                let sourceURL = URL(fileURLWithPath: location.path)
+                let destinationURL = URL(fileURLWithPath: filePath)
                 do {
                     try fileManager.createDirectory(at: destinationURL, withIntermediateDirectories: true, attributes: nil)
                     try fileManager.unzipItem(at: sourceURL, to: destinationURL)
+                    cache.storeFile(at: destinationURL, to: destinationURL)
+                    cache.removeTmpFile(tmpFileName)
                 } catch {
-                    manager?.log(.error("Extraction of ZIP archive failed with error:\(error)", error: error))
+                    print("Extraction of ZIP archive failed with error:\(error)")
                 }
+                return
             default:
                 break
             }
         }
-        
-        cache.storeFile(at: sourceURL, to: URL(fileURLWithPath: filePath))
+        cache.storeFile(at: location, to: URL(fileURLWithPath: filePath))
         cache.removeTmpFile(tmpFileName)
     }
     
     internal func didComplete(_ type: CompletionType) {
         switch type {
         case .local:
+            
             switch status {
-            case .willSuspend, .willCancel, .willRemove:
+            case .willSuspend,.willCancel, .willRemove:
                 determineStatus(with: .manual)
             case .running:
                 succeeded(fromRunning: false, immediately: true)
             default:
                 return
             }
+            
         case let .network(task, error):
             manager?.maintainTasks(with: .removeRunningTasks(self))
             sessionTask = nil
-            
+
             switch status {
             case .willCancel, .willRemove:
                 determineStatus(with: .manual)
@@ -619,25 +612,19 @@ extension Array where Element == ZYGDLDownloadTask {
     
     @discardableResult
     public func progress(onMainQueue: Bool = true, handler: @escaping Handler<ZYGDLDownloadTask>) -> [Element] {
-        self.forEach { task in
-            task.progress(onMainQueue: onMainQueue, handler: handler)
-        }
+        self.forEach { $0.progress(onMainQueue: onMainQueue, handler: handler) }
         return self
     }
     
     @discardableResult
     public func success(onMainQueue: Bool = true, handler: @escaping Handler<ZYGDLDownloadTask>) -> [Element] {
-        self.forEach { task in
-            task.success(onMainQueue: onMainQueue, handler: handler)
-        }
+        self.forEach { $0.success(onMainQueue: onMainQueue, handler: handler) }
         return self
     }
     
     @discardableResult
     public func failure(onMainQueue: Bool = true, handler: @escaping Handler<ZYGDLDownloadTask>) -> [Element] {
-        self.forEach { task in
-            task.failure(onMainQueue: onMainQueue, handler: handler)
-        }
+        self.forEach { $0.failure(onMainQueue: onMainQueue, handler: handler) }
         return self
     }
     

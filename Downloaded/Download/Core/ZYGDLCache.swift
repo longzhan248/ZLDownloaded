@@ -87,7 +87,7 @@ public class ZYGDLCache {
         decoder.userInfo[.cache] = self
     }
     
-    public func invalidata() {
+    public func invalidate() {
         // 使缓存失效，将缓存实例从解码器的 userInfo 中移除。
         decoder.userInfo[.cache] = nil
     }
@@ -194,7 +194,7 @@ extension ZYGDLCache {
             }
             self.createDirectory()
             if let handle = handle {
-                ZYGDLExecuter(onMainQueue: onMainQueue, handle: handle).execute(self)
+                ZYGDLExecuter(onMainQueue: onMainQueue, handler: handle).execute(self)
             }
         }
     }
@@ -204,7 +204,7 @@ extension ZYGDLCache {
 extension ZYGDLCache {
     
     // 检索所有下载任务的方法。
-    internal func retrieveAllTask() -> [ZYGDLDownloadTask] {
+    internal func retrieveAllTasks() -> [ZYGDLDownloadTask] {
         return ioQueue.sync {
             let path = (downloadPath as NSString).appendingPathComponent("\(identifier)_Tasks.plist")
             if fileManager.fileExists(atPath: path) {
@@ -234,8 +234,8 @@ extension ZYGDLCache {
     // 检索临时文件的方法。
     internal func retrieveTmpFile(_ tmpFileName: String?) -> Bool {
         return ioQueue.sync {
-            guard let tmpFileName = tmpFileName, !tmpFileName.isEmpty else { return false }
-            
+            guard let tmpFileName = tmpFileName, !tmpFileName.isEmpty else { return false
+            }
             let backupFilePath = (downloadTmpPath as NSString).appendingPathComponent(tmpFileName)
             let originFilePath = (NSTemporaryDirectory() as NSString).appendingPathComponent(tmpFileName)
             let backupFileExists = fileManager.fileExists(atPath: backupFilePath)
@@ -368,8 +368,7 @@ extension ZYGDLCache {
             guard let tmpFileName = tmpFileName, !tmpFileName.isEmpty else { return }
             let path1 = (self.downloadTmpPath as NSString).appendingPathComponent(tmpFileName)
             let path2 = (NSTemporaryDirectory() as NSString).appendingPathComponent(tmpFileName)
-            let paths: [String] = [path1, path2]
-            paths.forEach { path in
+            [path1, path2].forEach { (path) in
                 if self.fileManager.fileExists(atPath: path) {
                     do {
                         try self.fileManager.removeItem(atPath: path)

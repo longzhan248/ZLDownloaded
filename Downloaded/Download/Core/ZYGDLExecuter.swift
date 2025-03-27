@@ -17,26 +17,26 @@ public struct ZYGDLExecuter<T> {
     private let onMainQueue: Bool
     
     // 表示要执行的处理程序。
-    private let handle: Handler<T>?
+    private let handler: Handler<T>?
     
-    public init(onMainQueue: Bool, handle: Handler<T>?) {
+    public init(onMainQueue: Bool, handler: Handler<T>?) {
         // 初始化 onMainQueue。
         self.onMainQueue = onMainQueue
         // 初始化 handler。
-        self.handle = handle
+        self.handler = handler
     }
     
     public func execute(_ object: T) {
-        if let handle = handle {
+        if let handler = handler {
             // 如果需要在主队列上执行。
             if onMainQueue {
                 // 使用 DispatchQueue.tr.executeOnMain 在主队列上执行 handler。
                 DispatchQueue.tr.executeOnMain {
-                    handle(object)
+                    handler(object)
                 }
             } else {
                 // 否则直接执行 handler。
-                handle(object)
+                handler(object)
             }
         }
     }

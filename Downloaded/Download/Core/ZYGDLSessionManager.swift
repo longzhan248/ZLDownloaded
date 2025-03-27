@@ -46,19 +46,13 @@ public class ZYGDLSessionManager {
         var isControlNetworkActivityIndicator: Bool = true
         var configuration: ZYGDLSessionConfiguration {
             didSet {
-                guard !shouldCreatSession else {
-                    return
-                }
+                guard !shouldCreatSession else { return }
                 shouldCreatSession = true
                 if status == .running {
                     if configuration.maxConcurrentTasksLimit <= oldValue.maxConcurrentTasksLimit {
-                        restartTasks = runningTasks + tasks.filter({ task in
-                            task.status == .waiting
-                        })
+                        restartTasks = runningTasks + tasks.filter { $0.status == .waiting }
                     } else {
-                        restartTasks = tasks.filter({ task in
-                            task.status == .waiting || task.status == .running
-                        })
+                        restartTasks = tasks.filter { $0.status == .waiting || $0.status == .running }
                     }
                 } else {
                     session?.invalidateAndCancel()
@@ -93,9 +87,7 @@ public class ZYGDLSessionManager {
             protectedState.directValue.logger
         }
         set {
-            protectedState.write {
-                $0.logger = newValue
-            }
+            protectedState.write { $0.logger = newValue }
         }
     }
     
@@ -104,9 +96,7 @@ public class ZYGDLSessionManager {
             protectedState.directValue.isControlNetworkActivityIndicator
         }
         set {
-            protectedState.write {
-                $0.isControlNetworkActivityIndicator = newValue
-            }
+            protectedState.write { $0.isControlNetworkActivityIndicator = newValue }
         }
     }
     
@@ -119,9 +109,7 @@ public class ZYGDLSessionManager {
             protectedState.directValue.session
         }
         set {
-            protectedState.write {
-                $0.session = newValue
-            }
+            protectedState.write { $0.session = newValue }
         }
     }
     
@@ -130,9 +118,7 @@ public class ZYGDLSessionManager {
             protectedState.directValue.shouldCreatSession
         }
         set {
-            protectedState.write {
-                $0.shouldCreatSession = newValue
-            }
+            protectedState.write { $0.shouldCreatSession = newValue }
         }
     }
     
@@ -141,9 +127,7 @@ public class ZYGDLSessionManager {
             protectedState.directValue.timer
         }
         set {
-            protectedState.write {
-                $0.timer = newValue
-            }
+            protectedState.write { $0.timer = newValue }
         }
     }
     
@@ -152,12 +136,8 @@ public class ZYGDLSessionManager {
             protectedState.directValue.status
         }
         set {
-            protectedState.write {
-                $0.status = newValue
-            }
-            if newValue == .willSuspend ||
-                newValue == .willCancel ||
-                newValue == .willRemove {
+            protectedState.write { $0.status = newValue }
+            if newValue == .willSuspend || newValue == .willCancel || newValue == .willRemove {
                 return
             }
             log(.sessionManager(newValue.rawValue, manager: self))
@@ -169,9 +149,7 @@ public class ZYGDLSessionManager {
             protectedState.directValue.tasks
         }
         set {
-            protectedState.write {
-                $0.tasks = newValue
-            }
+            protectedState.write { $0.tasks = newValue }
         }
     }
     
@@ -180,9 +158,7 @@ public class ZYGDLSessionManager {
             protectedState.directValue.runningTasks
         }
         set {
-            protectedState.write {
-                $0.runningTasks = newValue
-            }
+            protectedState.write { $0.runningTasks = newValue }
         }
     }
     
@@ -191,9 +167,7 @@ public class ZYGDLSessionManager {
             protectedState.directValue.restartTasks
         }
         set {
-            protectedState.write {
-                $0.restartTasks = newValue
-            }
+            protectedState.write { $0.restartTasks = newValue }
         }
     }
     
@@ -202,20 +176,14 @@ public class ZYGDLSessionManager {
             protectedState.directValue.succeededTasks
         }
         set {
-            protectedState.write {
-                $0.succeededTasks = newValue
-            }
+            protectedState.write { $0.succeededTasks = newValue }
         }
     }
     
     private let _progress = Progress()
     public var progress: Progress {
-        _progress.completedUnitCount = tasks.reduce(0, { partialResult, task in
-            partialResult + task.progress.completedUnitCount
-        })
-        _progress.totalUnitCount = tasks.reduce(0, { partialResult, task in
-            partialResult + task.progress.totalUnitCount
-        })
+        _progress.completedUnitCount = tasks.reduce(0, { $0 + $1.progress.completedUnitCount })
+        _progress.totalUnitCount = tasks.reduce(0, { $0 + $1.progress.totalUnitCount })
         return _progress
     }
     
@@ -224,9 +192,7 @@ public class ZYGDLSessionManager {
             protectedState.directValue.speed
         }
         set {
-            protectedState.write {
-                $0.speed = newValue
-            }
+            protectedState.write { $0.speed = newValue }
         }
     }
     
@@ -239,9 +205,7 @@ public class ZYGDLSessionManager {
             protectedState.directValue.timeRemaining
         }
         set {
-            protectedState.write {
-                $0.timeRemaining = newValue
-            }
+            protectedState.write { $0.timeRemaining = newValue }
         }
     }
     
@@ -254,9 +218,7 @@ public class ZYGDLSessionManager {
             protectedState.directValue.progressExecuter
         }
         set {
-            protectedState.write {
-                $0.progressExecuter = newValue
-            }
+            protectedState.write { $0.progressExecuter = newValue }
         }
     }
     
@@ -265,9 +227,7 @@ public class ZYGDLSessionManager {
             protectedState.directValue.successExecuter
         }
         set {
-            protectedState.write {
-                $0.successExecuter = newValue
-            }
+            protectedState.write { $0.successExecuter = newValue }
         }
     }
     
@@ -276,9 +236,7 @@ public class ZYGDLSessionManager {
             protectedState.directValue.failureExecuter
         }
         set {
-            protectedState.write {
-                $0.failureExecuter = newValue
-            }
+            protectedState.write { $0.failureExecuter = newValue }
         }
     }
     
@@ -287,9 +245,7 @@ public class ZYGDLSessionManager {
             protectedState.directValue.completionExecuter
         }
         set {
-            protectedState.write {
-                $0.completionExecuter = newValue
-            }
+            protectedState.write { $0.completionExecuter = newValue }
         }
     }
     
@@ -298,9 +254,7 @@ public class ZYGDLSessionManager {
             protectedState.directValue.controlExecuter
         }
         set {
-            protectedState.write {
-                $0.controlExecuter = newValue
-            }
+            protectedState.write { $0.controlExecuter = newValue }
         }
     }
     
@@ -313,23 +267,20 @@ public class ZYGDLSessionManager {
         let bundleIdentifier = Bundle.main.bundleIdentifier ?? "com.ZYG.Downloaded"
         self.identifier = "\(bundleIdentifier).\(identifier)"
         protectedState = ZYGDLProtector(
-            State(logger: logger ?? ZYGDLLogger(identifier: "\(bundleIdentifier).\(identifier)", option: .default), configuration: configuration)
+            State(logger: logger ?? ZYGDLLogger(identifier: "\(bundleIdentifier).\(identifier)", option: .default),
+                  configuration: configuration)
         )
         self.operationQueue = operationQueue
         self.cache = cache ?? ZYGDLCache(identifier)
         self.cache.manager = self
-        self.cache.retrieveAllTask().forEach { task in
-            maintainTasks(with: .append(task))
-        }
-        succeededTasks = tasks.filter({ task in
-            task.status == .succeeded
-        })
+        self.cache.retrieveAllTasks().forEach { maintainTasks(with: .append($0)) }
+        succeededTasks = tasks.filter { $0.status == .succeeded }
         log(.sessionManager("retrieveTasks", manager: self))
         protectedState.write { state in
-            state.tasks.forEach { task in
-                task.manager = self
-                task.operationQueue = operationQueue
-                state.urlMapper[task.currentURL] = task.url
+            state.tasks.forEach {
+                $0.manager = self
+                $0.operationQueue = operationQueue
+                state.urlMapper[$0.currentURL] = $0.url
             }
             state.shouldCreatSession = true
         }
@@ -346,14 +297,12 @@ public class ZYGDLSessionManager {
     public func invalidate() {
         session?.invalidateAndCancel()
         session = nil
-        cache.invalidata()
+        cache.invalidate()
         invalidateTimer()
     }
     
     private func createSession(_ completion: (() -> ())? = nil) {
-        guard shouldCreatSession else {
-            return
-        }
+        guard shouldCreatSession else { return }
         let sessionConfiguration = URLSessionConfiguration.background(withIdentifier: identifier)
         sessionConfiguration.timeoutIntervalForRequest = configuration.timeoutIntervalForRequest
         sessionConfiguration.httpMaximumConnectionsPerHost = 100000
@@ -370,9 +319,7 @@ public class ZYGDLSessionManager {
                                      delegate: sessionDelegate,
                                      delegateQueue: delegateQueue)
             $0.session = session
-            $0.tasks.forEach { task in
-                task.session = session
-            }
+            $0.tasks.forEach { $0.session = session }
             $0.shouldCreatSession = false
         }
         completion?()
@@ -436,24 +383,26 @@ extension ZYGDLSessionManager {
                               fileNames: [String]? = nil,
                               onMainQueue: Bool = true,
                               handler: Handler<ZYGDLSessionManager>? = nil) -> [ZYGDLDownloadTask] {
-        if let headersArray = headersArray, headersArray.count != 0 && headersArray.count != urls.count {
+        if let headersArray = headersArray,
+            headersArray.count != 0 && headersArray.count != urls.count {
             log(.error("create multiple dowloadTasks failed", error: ZYGDLError.headersMatchFailed))
             return [ZYGDLDownloadTask]()
         }
         
-        if let fileNames = fileNames, fileNames.count != 0 && fileNames.count != urls.count {
+        if let fileNames = fileNames,
+            fileNames.count != 0 && fileNames.count != urls.count {
             log(.error("create multiple dowloadTasks failed", error: ZYGDLError.fileNamesMatchFailed))
             return [ZYGDLDownloadTask]()
         }
-        
+
         var urlSet = Set<URL>()
         var uniqueTasks = [ZYGDLDownloadTask]()
-        
+
         operationQueue.sync {
             for (index, url) in urls.enumerated() {
                 let fileName = fileNames?.safeObject(at: index)
                 let headers = headersArray?.safeObject(at: index)
-                
+
                 guard let validURL = try? url.asURL() else {
                     log(.error("create dowloadTask failed", error: ZYGDLError.invalidURL(url: url)))
                     continue
@@ -462,7 +411,7 @@ extension ZYGDLSessionManager {
                     log(.error("create dowloadTask failed", error: ZYGDLError.duplicateURL(url: url)))
                     continue
                 }
-                
+
                 var task: ZYGDLDownloadTask!
                 task = fetchTask(validURL)
                 if let task = task {
@@ -480,11 +429,11 @@ extension ZYGDLSessionManager {
                 uniqueTasks.append(task)
             }
             storeTasks()
-            ZYGDLExecuter(onMainQueue: onMainQueue, handle: handler).execute(self)
+            ZYGDLExecuter(onMainQueue: onMainQueue, handler: handler).execute(self)
             operationQueue.async {
-                uniqueTasks.forEach { task in
-                    if task.status != .succeeded {
-                        self._start(task)
+                uniqueTasks.forEach {
+                    if $0.status != .succeeded {
+                        self._start($0)
                     }
                 }
             }
@@ -499,9 +448,7 @@ extension ZYGDLSessionManager {
     public func fetchTask(_ url: ZYGDLURLConvertible) -> ZYGDLDownloadTask? {
         do {
             let validURL = try url.asURL()
-            return protectedState.read {
-                $0.taskMapper[validURL.absoluteString]
-            }
+            return protectedState.read { $0.taskMapper[validURL.absoluteString] }
         } catch {
             log(.error("fetch task failed", error: ZYGDLError.invalidURL(url: url)))
             return nil
@@ -551,7 +498,7 @@ extension ZYGDLSessionManager {
     private func _start(_ task: ZYGDLDownloadTask,
                         onMainQueue: Bool = true,
                         handler: Handler<ZYGDLDownloadTask>? = nil) {
-        task.controlExecuter = ZYGDLExecuter(onMainQueue: onMainQueue, handle: handler)
+        task.controlExecuter = ZYGDLExecuter(onMainQueue: onMainQueue, handler: handler)
         didStart()
         if !shouldCreatSession {
             task.download()
@@ -627,7 +574,7 @@ extension ZYGDLSessionManager {
     ///   - url: URLConvertible
     ///   - completely: 是否删除下载完成的文件
     public func remove(_ url: ZYGDLURLConvertible,
-                       completelty: Bool = false,
+                       completely: Bool = false,
                        onMainQueue: Bool = true,
                        handler: Handler<ZYGDLDownloadTask>? = nil) {
         operationQueue.async {
@@ -635,12 +582,12 @@ extension ZYGDLSessionManager {
                 self.log(.error("can't remove downloadTask", error: ZYGDLError.fetchDownloadTaskFailed(url: url)))
                 return
             }
-            task.remove(completely: completelty, onMainQueue: onMainQueue, handler: handler)
+            task.remove(completely: completely, onMainQueue: onMainQueue, handler: handler)
         }
     }
     
     public func remove(_ task: ZYGDLDownloadTask,
-                       completelty: Bool = false,
+                       completely: Bool = false,
                        onMainQueue: Bool = true,
                        handler: Handler<ZYGDLDownloadTask>? = nil) {
         operationQueue.async {
@@ -648,7 +595,7 @@ extension ZYGDLSessionManager {
                 self.log(.error("can't remove downloadTask", error: ZYGDLError.fetchDownloadTaskFailed(url: task.url)))
                 return
             }
-            task.remove(completely: completelty, onMainQueue: onMainQueue, handler: handler)
+            task.remove(completely: completely, onMainQueue: onMainQueue, handler: handler)
         }
     }
     
@@ -657,7 +604,7 @@ extension ZYGDLSessionManager {
             let range = (0..<tasks.count)
             guard range.contains(sourceIndex) && range.contains(destinationIndex) else {
                 log(.error("move task failed, sourceIndex: \(sourceIndex), destinationIndex: \(destinationIndex)",
-                                error: ZYGDLError.indexOutOfRange))
+                           error: ZYGDLError.indexOutOfRange))
                 return
             }
             if sourceIndex == destinationIndex {
@@ -684,37 +631,27 @@ extension ZYGDLSessionManager {
                     self._start(task)
                 }
             }
-            ZYGDLExecuter(onMainQueue: onMainQueue, handle: handler).execute(self)
+            ZYGDLExecuter(onMainQueue: onMainQueue, handler: handler).execute(self)
         }
     }
     
     public func totalSuspend(onMainQueue: Bool = true,
                              handler: Handler<ZYGDLSessionManager>? = nil) {
         operationQueue.async {
-            guard self.status == .running ||
-                    self.status == .waiting else {
-                return
-            }
+            guard self.status == .running || self.status == .waiting else { return }
             self.status = .willSuspend
-            self.controlExecuter = ZYGDLExecuter(onMainQueue: onMainQueue, handle: handler)
-            self.tasks.forEach { task in
-                task.suspend()
-            }
+            self.controlExecuter = ZYGDLExecuter(onMainQueue: onMainQueue, handler: handler)
+            self.tasks.forEach { $0.suspend() }
         }
     }
     
     public func totalCancel(onMainQueue: Bool = true,
                             handler: Handler<ZYGDLSessionManager>? = nil) {
         operationQueue.async {
-            guard self.status != .succeeded &&
-                    self.status != .canceled else {
-                return
-            }
+            guard self.status != .succeeded && self.status != .canceled else { return }
             self.status = .willCancel
-            self.controlExecuter = ZYGDLExecuter(onMainQueue: onMainQueue, handle: handler)
-            self.tasks.forEach { task in
-                task.cancel()
-            }
+            self.controlExecuter = ZYGDLExecuter(onMainQueue: onMainQueue, handler: handler)
+            self.tasks.forEach { $0.cancel() }
         }
     }
     
@@ -722,14 +659,10 @@ extension ZYGDLSessionManager {
                             onMainQueue: Bool = true,
                             handler: Handler<ZYGDLSessionManager>? = nil) {
         operationQueue.async {
-            guard self.status != .removed else {
-                return
-            }
+            guard self.status != .removed else { return }
             self.status = .willRemove
-            self.controlExecuter = ZYGDLExecuter(onMainQueue: onMainQueue, handle: handler)
-            self.tasks.forEach { task in
-                task.remove(completely: completely)
-            }
+            self.controlExecuter = ZYGDLExecuter(onMainQueue: onMainQueue, handler: handler)
+            self.tasks.forEach { $0.remove(completely: completely) }
         }
     }
     
@@ -749,34 +682,34 @@ extension ZYGDLSessionManager {
     internal func maintainTasks(with action: MaintainTasksAction) {
         switch action {
         case let .append(task):
-            protectedState.write {
-                $0.tasks.append(task)
-                $0.taskMapper[task.url.absoluteString] = task
-                $0.urlMapper[task.currentURL] = task.url
+            protectedState.write { state in
+                state.tasks.append(task)
+                state.taskMapper[task.url.absoluteString] = task
+                state.urlMapper[task.currentURL] = task.url
             }
         case let .remove(task):
-            protectedState.write {
-                if $0.status == .willRemove {
-                    $0.taskMapper.removeValue(forKey: task.url.absoluteString)
-                    $0.urlMapper.removeValue(forKey: task.currentURL)
-                    if $0.taskMapper.values.isEmpty {
-                        $0.tasks.removeAll()
-                        $0.succeededTasks.removeAll()
+            protectedState.write { state in
+                if state.status == .willRemove {
+                    state.taskMapper.removeValue(forKey: task.url.absoluteString)
+                    state.urlMapper.removeValue(forKey: task.currentURL)
+                    if state.taskMapper.values.isEmpty {
+                        state.tasks.removeAll()
+                        state.succeededTasks.removeAll()
                     }
-                } else if $0.status == .willCancel {
-                    $0.taskMapper.removeValue(forKey: task.url.absoluteString)
-                    $0.urlMapper.removeValue(forKey: task.currentURL)
-                    if $0.taskMapper.values.count == $0.succeededTasks.count {
-                        $0.tasks = $0.succeededTasks
+                } else if state.status == .willCancel {
+                    state.taskMapper.removeValue(forKey: task.url.absoluteString)
+                    state.urlMapper.removeValue(forKey: task.currentURL)
+                    if state.taskMapper.values.count == state.succeededTasks.count {
+                        state.tasks = state.succeededTasks
                     }
                 } else {
-                    $0.taskMapper.removeValue(forKey: task.url.absoluteString)
-                    $0.urlMapper.removeValue(forKey: task.currentURL)
-                    $0.tasks.removeAll {
+                    state.taskMapper.removeValue(forKey: task.url.absoluteString)
+                    state.urlMapper.removeValue(forKey: task.currentURL)
+                    state.tasks.removeAll {
                         $0.url.absoluteString == task.url.absoluteString
                     }
                     if task.status == .removed {
-                        $0.succeededTasks.removeAll {
+                        state.succeededTasks.removeAll {
                             $0.url.absoluteString == task.url.absoluteString
                         }
                     }
@@ -785,12 +718,12 @@ extension ZYGDLSessionManager {
         case let .succeeded(task):
             succeededTasks.append(task)
         case let .appendRunningTasks(task):
-            protectedState.write {
-                $0.runningTasks.append(task)
+            protectedState.write { state in
+                state.runningTasks.append(task)
             }
         case let .removeRunningTasks(task):
-            protectedState.write {
-                $0.runningTasks.removeAll {
+            protectedState.write { state in
+                state.runningTasks.removeAll {
                     $0.url.absoluteString == task.url.absoluteString
                 }
             }
@@ -798,19 +731,15 @@ extension ZYGDLSessionManager {
     }
     
     internal func updateUrlMapper(with task: ZYGDLDownloadTask) {
-        protectedState.write {
-            $0.urlMapper[task.currentURL] = task.url
-        }
+        protectedState.write { $0.urlMapper[task.currentURL] = task.url }
     }
     
     private func restoreStatus() {
         if self.tasks.isEmpty {
             return
         }
-        session?.getTasksWithCompletionHandler({ [weak self] (dataTasks, uploadTasks, downloadTasks) in
-            guard let self = self else {
-                return
-            }
+        session?.getTasksWithCompletionHandler { [weak self] (dataTasks, uploadTasks, downloadTasks) in
+            guard let self = self else { return }
             downloadTasks.forEach { downloadTask in
                 if downloadTask.state == .running,
                     let currentURL = downloadTask.currentRequest?.url,
@@ -825,20 +754,15 @@ extension ZYGDLSessionManager {
             if !self.shouldComplete() {
                 self.shouldSuspend()
             }
-        })
+        }
     }
     
     private func shouldComplete() -> Bool {
-        let isSucceeded = self.tasks.allSatisfy { task in
-            task.status == .succeeded
-        }
-        let isCompleted = isSucceeded ? isSucceeded : self.tasks.allSatisfy({ task in
-            task.status == .succeeded || task.status == .failed
-        })
-        guard isCompleted else {
-            return false
-        }
-        
+        let isSucceeded = self.tasks.allSatisfy { $0.status == .succeeded }
+        let isCompleted = isSucceeded ? isSucceeded :
+                                        self.tasks.allSatisfy { $0.status == .succeeded || $0.status == .failed }
+        guard isCompleted else { return false }
+
         if status == .succeeded || status == .failed {
             return true
         }
@@ -850,12 +774,8 @@ extension ZYGDLSessionManager {
     }
     
     private func shouldSuspend() {
-        let isSuspended = tasks.allSatisfy { task in
-            task.status == .suspended ||
-            task.status == .succeeded ||
-            task.status == .failed
-        }
-        
+        let isSuspended = tasks.allSatisfy { $0.status == .suspended || $0.status == .succeeded || $0.status == .failed }
+
         if isSuspended {
             if status == .suspended {
                 return
@@ -912,7 +832,7 @@ extension ZYGDLSessionManager {
                 UIApplication.shared.isNetworkActivityIndicatorVisible = false
             }
         }
-        
+
         // removed
         if status == .willRemove {
             if tasks.isEmpty {
@@ -930,14 +850,13 @@ extension ZYGDLSessionManager {
                 status = .canceled
                 executeControl()
                 ending(false)
+                return
             }
             return
         }
         
         // completed
-        let isCompleted = tasks.allSatisfy { task in
-            task.status == .succeeded || task.status == .failed
-        }
+        let isCompleted = tasks.allSatisfy { $0.status == .succeeded || $0.status == .failed }
         
         if isCompleted {
             if status == .succeeded || status == .failed {
@@ -946,19 +865,17 @@ extension ZYGDLSessionManager {
             }
             timeRemaining = 0
             progressExecuter?.execute(self)
-            let isSucceeded = tasks.allSatisfy { task in
-                task.status == .succeeded
-            }
+            let isSucceeded = tasks.allSatisfy { $0.status == .succeeded }
             status = isSucceeded ? .succeeded : .failed
             ending(isSucceeded)
             return
         }
         
         // suspended
-        let isSuspended = tasks.allSatisfy { task in
-            task.status == .suspended || task.status == .succeeded || task.status == .failed
-        }
-        
+        let isSuspended = tasks.allSatisfy { $0.status == .suspended ||
+                                             $0.status == .succeeded ||
+                                             $0.status == .failed }
+
         if isSuspended {
             if status == .suspended {
                 storeTasks()
@@ -996,9 +913,7 @@ extension ZYGDLSessionManager {
     }
     
     private func startNextTask() {
-        guard let waitingTask = tasks.first(where: { $0.status == .waiting }) else {
-            return
-        }
+        guard let waitingTask = tasks.first (where: { $0.status == .waiting }) else { return }
         waitingTask.download()
     }
     
@@ -1014,9 +929,7 @@ extension ZYGDLSessionManager {
             timer = DispatchSource.makeTimerSource(flags: .strict, queue: operationQueue)
             timer?.schedule(deadline: .now(), repeating: Self.refreshInterval)
             timer?.setEventHandler(handler: { [weak self] in
-                guard let self = self else {
-                    return
-                }
+                guard let self = self else { return }
                 self.updateSpeedAndTimeRemaining()
             })
             timer?.resume()
@@ -1029,10 +942,10 @@ extension ZYGDLSessionManager {
     }
     
     internal func updateSpeedAndTimeRemaining() {
-        let speed = runningTasks.reduce(Int64(0)) { partialResult, task in
-            task.updateSpeedAndTimeRemaining()
-            return partialResult + task.speed
-        }
+        let speed = runningTasks.reduce(Int64(0), {
+            $1.updateSpeedAndTimeRemaining()
+            return $0 + $1.speed
+        })
         updateTimeRemaining(speed)
     }
     
@@ -1063,14 +976,14 @@ extension ZYGDLSessionManager {
     
     @discardableResult
     public func progress(onMainQueue: Bool = true, handler: @escaping Handler<ZYGDLSessionManager>) -> Self {
-        progressExecuter = ZYGDLExecuter(onMainQueue: onMainQueue, handle: handler)
+        progressExecuter = ZYGDLExecuter(onMainQueue: onMainQueue, handler: handler)
         return self
     }
     
     @discardableResult
     public func success(onMainQueue: Bool = true, handler: @escaping Handler<ZYGDLSessionManager>) -> Self {
-        successExecuter = ZYGDLExecuter(onMainQueue: onMainQueue, handle: handler)
-        if status == .succeeded && completionExecuter == nil {
+        successExecuter = ZYGDLExecuter(onMainQueue: onMainQueue, handler: handler)
+        if status == .succeeded  && completionExecuter == nil{
             operationQueue.async {
                 self.successExecuter?.execute(self)
             }
@@ -1080,12 +993,12 @@ extension ZYGDLSessionManager {
     
     @discardableResult
     public func failure(onMainQueue: Bool = true, handler: @escaping Handler<ZYGDLSessionManager>) -> Self {
-        failureExecuter = ZYGDLExecuter(onMainQueue: onMainQueue, handle: handler)
+        failureExecuter = ZYGDLExecuter(onMainQueue: onMainQueue, handler: handler)
         if completionExecuter == nil &&
             (status == .suspended ||
-             status == .canceled ||
-             status == .removed ||
-             status == .failed) {
+            status == .canceled ||
+            status == .removed ||
+            status == .failed) {
             operationQueue.async {
                 self.failureExecuter?.execute(self)
             }
@@ -1095,13 +1008,12 @@ extension ZYGDLSessionManager {
     
     @discardableResult
     public func completion(onMainQueue: Bool = true, handler: @escaping Handler<ZYGDLSessionManager>) -> Self {
-        completionExecuter = ZYGDLExecuter(onMainQueue: onMainQueue, handle: handler)
-        
+        completionExecuter = ZYGDLExecuter(onMainQueue: onMainQueue, handler: handler)
         if status == .suspended ||
             status == .canceled ||
             status == .removed ||
             status == .succeeded ||
-            status == .failed {
+            status == .failed  {
             operationQueue.async {
                 self.completionExecuter?.execute(self)
             }
@@ -1132,12 +1044,8 @@ extension ZYGDLSessionManager {
     
     internal func didBecomeInvalidation(withError error: Error?) {
         createSession { [weak self] in
-            guard let self = self else {
-                return
-            }
-            self.restartTasks.forEach { task in
-                self._start(task)
-            }
+            guard let self = self else { return }
+            self.restartTasks.forEach { self._start($0) }
             self.restartTasks.removeAll()
         }
     }

@@ -103,71 +103,35 @@ public class ZYGDLTask<TaskType>: NSObject, Codable {
     internal let protectedState: ZYGDLProtector<State>
     
     internal var session: URLSession? {
-        get {
-            protectedState.directValue.session
-        }
-        set {
-            protectedState.write {
-                $0.session = newValue
-            }
-        }
+        get { protectedState.directValue.session }
+        set { protectedState.write { $0.session = newValue } }
     }
     
     internal var headers: [String: String]? {
-        get {
-            protectedState.directValue.headers
-        }
-        set {
-            protectedState.write {
-                $0.headers = newValue
-            }
-        }
+        get { protectedState.directValue.headers }
+        set { protectedState.write { $0.headers = newValue } }
     }
     
     internal var verificationCode: String? {
-        get {
-            protectedState.directValue.verificationCode
-        }
-        set {
-            protectedState.write {
-                $0.verificationCode = newValue
-            }
-        }
+        get { protectedState.directValue.verificationCode }
+        set { protectedState.write { $0.verificationCode = newValue } }
     }
     
     internal var verificationType: ZYGDLFileChecksumHelper.VerificationType {
-        get {
-            protectedState.directValue.verificationType
-        }
-        set {
-            protectedState.write {
-                $0.verificationType = newValue
-            }
-        }
+        get { protectedState.directValue.verificationType }
+        set { protectedState.write { $0.verificationType = newValue } }
     }
     
     internal var isRemoveCompletely: Bool {
-        get {
-            protectedState.directValue.isRemoveCompletely
-        }
-        set {
-            protectedState.write {
-                $0.isRemoveCompletely = newValue
-            }
-        }
+        get { protectedState.directValue.isRemoveCompletely }
+        set { protectedState.write { $0.isRemoveCompletely = newValue } }
     }
-    
+
     public internal(set) var status: ZYGDLStatus {
-        get {
-            protectedState.directValue.status
-        }
+        get { protectedState.directValue.status }
         set {
-            protectedState.write {
-                $0.status = newValue
-            }
-            if newValue == .willSuspend ||
-                newValue == .willCancel ||
-                newValue == .willRemove {
+            protectedState.write { $0.status = newValue }
+            if newValue == .willSuspend || newValue == .willCancel || newValue == .willRemove {
                 return
             }
             if self is ZYGDLDownloadTask {
@@ -177,173 +141,93 @@ public class ZYGDLTask<TaskType>: NSObject, Codable {
     }
     
     public internal(set) var validation: Validation {
-        get {
-            protectedState.directValue.validation
-        }
-        set {
-            protectedState.write {
-                $0.validation = newValue
-            }
-        }
+        get { protectedState.directValue.validation }
+        set { protectedState.write { $0.validation = newValue } }
     }
     
     internal var currentURL: URL {
-        get {
-            protectedState.directValue.currentURL
-        }
-        set {
-            protectedState.write {
-                $0.currentURL = newValue
-            }
-        }
+        get { protectedState.directValue.currentURL }
+        set { protectedState.write { $0.currentURL = newValue } }
     }
-    
+
+
     public internal(set) var startDate: Double {
-        get {
-            protectedState.directValue.startDate
-        }
-        set {
-            protectedState.write {
-                $0.startDate = newValue
-            }
-        }
+        get { protectedState.directValue.startDate }
+        set { protectedState.write { $0.startDate = newValue } }
     }
     
     public var startDateString: String {
         startDate.tr.convertTimeToDateString()
     }
-    
+
     public internal(set) var endDate: Double {
-        get {
-            protectedState.directValue.endDate
-        }
-        set {
-            protectedState.write {
-                $0.endDate = newValue
-            }
-        }
+       get { protectedState.directValue.endDate }
+       set { protectedState.write { $0.endDate = newValue } }
     }
     
     public var endDateString: String {
         endDate.tr.convertTimeToDateString()
     }
-    
+
+
     public internal(set) var speed: Int64 {
-        get {
-            protectedState.directValue.speed
-        }
-        set {
-            protectedState.write {
-                $0.speed = newValue
-            }
-        }
+        get { protectedState.directValue.speed }
+        set { protectedState.write { $0.speed = newValue } }
     }
     
     public var speedString: String {
         speed.tr.convertSpeedToString()
     }
-    
+
+    /// 默认为url的md5加上文件扩展名
     public internal(set) var fileName: String {
-        get {
-            protectedState.directValue.fileName
-        }
-        set {
-            protectedState.write {
-                $0.fileName = newValue
-            }
-        }
+        get { protectedState.directValue.fileName }
+        set { protectedState.write { $0.fileName = newValue } }
     }
 
     public internal(set) var timeRemaining: Int64 {
-        get {
-            protectedState.directValue.timeRemaining
-        }
-        set {
-            protectedState.write {
-                $0.timeRemaining = newValue
-            }
-        }
+        get { protectedState.directValue.timeRemaining }
+        set { protectedState.write { $0.timeRemaining = newValue } }
     }
-
+    
     public var timeRemainingString: String {
         timeRemaining.tr.convertTimeToString()
     }
 
     public internal(set) var error: Error? {
-        get {
-            protectedState.directValue.error
-        }
-        set {
-            protectedState.write {
-                $0.error = newValue
-            }
-        }
+        get { protectedState.directValue.error }
+        set { protectedState.write { $0.error = newValue } }
     }
 
+
     internal var progressExecuter: ZYGDLExecuter<TaskType>? {
-        get {
-            protectedState.directValue.progressExecuter
-        }
-        set {
-            protectedState.write {
-                $0.progressExecuter = newValue
-            }
-        }
+        get { protectedState.directValue.progressExecuter }
+        set { protectedState.write { $0.progressExecuter = newValue } }
     }
 
     internal var successExecuter: ZYGDLExecuter<TaskType>? {
-        get {
-            protectedState.directValue.successExecuter
-        }
-        set {
-            protectedState.write {
-                $0.successExecuter = newValue
-            }
-        }
+        get { protectedState.directValue.successExecuter }
+        set { protectedState.write { $0.successExecuter = newValue } }
     }
 
     internal var failureExecuter: ZYGDLExecuter<TaskType>? {
-        get {
-            protectedState.directValue.failureExecuter
-        }
-        set {
-            protectedState.write {
-                $0.failureExecuter = newValue
-            }
-        }
+        get { protectedState.directValue.failureExecuter }
+        set { protectedState.write { $0.failureExecuter = newValue } }
     }
 
     internal var completionExecuter: ZYGDLExecuter<TaskType>? {
-        get {
-            protectedState.directValue.completionExecuter
-        }
-        set {
-            protectedState.write {
-                $0.completionExecuter = newValue
-            }
-        }
+        get { protectedState.directValue.completionExecuter }
+        set { protectedState.write { $0.completionExecuter = newValue } }
     }
-
+    
     internal var controlExecuter: ZYGDLExecuter<TaskType>? {
-        get {
-            protectedState.directValue.controlExecuter
-        }
-        set {
-            protectedState.write {
-                $0.controlExecuter = newValue
-            }
-        }
+        get { protectedState.directValue.controlExecuter }
+        set { protectedState.write { $0.controlExecuter = newValue } }
     }
 
     internal var validateExecuter: ZYGDLExecuter<TaskType>? {
-        get {
-            protectedState.directValue.validateExecuter
-        }
-        set {
-            protectedState.write {
-                $0.validateExecuter = newValue
-            }
-        }
+        get { protectedState.directValue.validateExecuter }
+        set { protectedState.write { $0.validateExecuter = newValue } }
     }
     
     internal init(_ url: URL,
@@ -390,16 +274,16 @@ public class ZYGDLTask<TaskType>: NSObject, Codable {
         let fileName = try container.decode(String.self, forKey: .fileName)
         protectedState = ZYGDLProtector(State(currentURL: currentURL, fileName: fileName))
         cache = decoder.userInfo[.cache] as? ZYGDLCache ?? ZYGDLCache("default")
-        operationQueue = decoder.userInfo[.operationQueue] as? DispatchQueue ?? DispatchQueue(label: "com.ZYG.Downloaded.SessionManager.operationQueue")
+        operationQueue = decoder.userInfo[.operationQueue] as? DispatchQueue ?? DispatchQueue(label: "com.zyg.Downloaded.SessionManager.operationQueue")
         super.init()
 
         progress.totalUnitCount = try container.decode(Int64.self, forKey: .totalBytes)
         progress.completedUnitCount = try container.decode(Int64.self, forKey: .completedBytes)
-
+        
         let statusString = try container.decode(String.self, forKey: .status)
         let verificationTypeInt = try container.decode(Int.self, forKey: .verificationType)
         let validationType = try container.decode(Int.self, forKey: .validation)
-
+        
         try protectedState.write {
             $0.headers = try container.decodeIfPresent([String: String].self, forKey: .headers)
             $0.startDate = try container.decode(Double.self, forKey: .startDate)
@@ -430,18 +314,15 @@ extension ZYGDLTask {
     @discardableResult
     public func progress(onMainQueue: Bool = true, handler: @escaping Handler<TaskType>) -> Self {
         // 创建一个 Executer 实例，并将其赋值给 progressExecuter。
-        progressExecuter = ZYGDLExecuter(onMainQueue: onMainQueue, handle: handler)
+        progressExecuter = ZYGDLExecuter(onMainQueue: onMainQueue, handler: handler)
         return self
     }
     
     // 用于设置任务成功的处理程序。
     @discardableResult
     public func success(onMainQueue: Bool = true, handler: @escaping Handler<TaskType>) -> Self {
-        // 创建一个 Executer 实例，并将其赋值给 successExecuter。
-        successExecuter = ZYGDLExecuter(onMainQueue: onMainQueue, handle: handler)
-        
-        // 如果任务状态为成功且没有完成的处理程序，则异步执行 successExecuter。
-        if status == .succeeded && completionExecuter == nil {
+        successExecuter = ZYGDLExecuter(onMainQueue: onMainQueue, handler: handler)
+        if status == .succeeded  && completionExecuter == nil{
             operationQueue.async {
                 self.execute(self.successExecuter)
             }
@@ -452,14 +333,12 @@ extension ZYGDLTask {
     // 用于设置任务失败的处理程序。
     @discardableResult
     public func failure(onMainQueue: Bool = true, handler: @escaping Handler<TaskType>) -> Self {
-        // 创建一个 Executer 实例，并将其赋值给 failureExecuter。
-        failureExecuter = ZYGDLExecuter(onMainQueue: onMainQueue, handle: handler)
-        
+        failureExecuter = ZYGDLExecuter(onMainQueue: onMainQueue, handler: handler)
         if completionExecuter == nil &&
             (status == .suspended ||
-             status == .canceled ||
-             status == .removed ||
-             status == .failed) {
+            status == .canceled ||
+            status == .removed ||
+            status == .failed) {
             operationQueue.async {
                 self.execute(self.failureExecuter)
             }
@@ -470,15 +349,12 @@ extension ZYGDLTask {
     // 用于设置任务完成的处理程序。
     @discardableResult
     public func completion(onMainQueue: Bool = true, handler: @escaping Handler<TaskType>) -> Self {
-        // 创建一个 Executer 实例，并将其赋值给 completionExecuter。
-        completionExecuter = ZYGDLExecuter(onMainQueue: onMainQueue, handle: handler)
-        
-        // 如果任务状态为暂停、取消、移除、成功或失败，则异步执行 completionExecuter。
+        completionExecuter = ZYGDLExecuter(onMainQueue: onMainQueue, handler: handler)
         if status == .suspended ||
             status == .canceled ||
             status == .removed ||
             status == .succeeded ||
-            status == .failed {
+            status == .failed  {
             operationQueue.async {
                 self.execute(self.completionExecuter)
             }
