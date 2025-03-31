@@ -67,6 +67,11 @@ public class ZYGDLDownloadTask: ZYGDLTask<ZYGDLDownloadTask> {
         return pathExtension.isEmpty ? nil : pathExtension
     }
     
+    // 用户获取文件扩展枚举值
+    public var fileType: ZYGDLFileType {
+        return ZYGDLFileType(fileExtension: pathExtension)
+    }
+    
     // 用于存储下载状态。
     private struct DownloadState {
         var resumeData: Data? {

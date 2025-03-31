@@ -105,22 +105,26 @@ public enum ZYGDLStatus: String {
 }
 
 // 定义文件类型枚举
-enum ZYGDLFileType {
+public enum ZYGDLFileType {
     case zip
     case mp4
     case text
     case json
+    case svga
+    case vap
     case other(String)  // 其他未知类型保存原始扩展名
     
     // 根据文件扩展名初始化
-    init(fileExtension: String) {
-        let ext = fileExtension.lowercased()
+    init(fileExtension: String?) {
+        let ext = fileExtension?.lowercased()
         switch ext {
         case "zip": self = .zip
         case "mp4": self = .mp4
         case "txt": self = .text
         case "json": self = .json
-        default: self = .other(fileExtension)
+        case "svga": self = .svga
+        case "vap": self = .vap
+        default: self = .other(fileExtension ?? "")
         }
     }
 }
