@@ -732,6 +732,7 @@ extension ZYGDLSessionManager {
     
     internal func updateUrlMapper(with task: ZYGDLDownloadTask) {
         protectedState.write { $0.urlMapper[task.currentURL] = task.url }
+        storeTasks()
     }
     
     private func restoreStatus() {
