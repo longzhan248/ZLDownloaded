@@ -19,7 +19,7 @@ import UIKit
         // 初始化代码
         let configuration = ZYGDLBGSessionConfiguration()
         configuration.allowsCellularAccess = true;
-        sessionManager = ZYGDLBGSessionManager(identifier: "com.xingyun.yuanqixingqiu", configuration: configuration)
+        sessionManager = ZYGDLBGSessionManager(identifier: Bundle.main.bundleIdentifier ?? "com.zyg.download", configuration: configuration)
     }
     
     
