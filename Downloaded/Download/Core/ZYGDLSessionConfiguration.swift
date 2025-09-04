@@ -50,11 +50,5 @@ public struct ZYGDLSessionConfiguration {
 
 // 用于获取最大并发任务数的限制。
 var MaxConcurrentTasksLimit: Int {
-    // 根据 iOS 版本返回不同的最大并发任务数限制，iOS 11.0 及以上为 6，其他版本为 3。
-    if #available(iOS 11.0, *) {
-        return 6
-    } else {
-        return 3
-    }
-    
+    return 6
 }

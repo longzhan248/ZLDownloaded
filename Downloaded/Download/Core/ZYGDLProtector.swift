@@ -109,48 +109,29 @@ final public class ZYGDLProtector<T> {
 /// 用于防抖动操作。
 final public class ZYGDLDebouncer {
     
-    // 使用 UnfairLock 实现线程安全。
-    private let lock = ZYGDLUnfairLock()
+    private let dispatchQueue: DispatchQueue
     
-    // 执行任务的队列。
-    private var queue: DispatchQueue
+    private let timeInterval: DispatchTimeInterval
     
-    // 存储任务的字典。
-    private var workItems = [String: DispatchWorkItem]()
+    private var workItem: DispatchWorkItem?
     
-    // 初始化方法，设置队列。
-    public init(queue: DispatchQueue) {
-        self.queue = queue
+    public init(timeInterval: DispatchTimeInterval) {
+        self.dispatchQueue = DispatchQueue(label: UUID().uuidString)
+        self.timeInterval = timeInterval
     }
     
-    public func execute(label: String, deadline: DispatchTime, execute work: @escaping @convention(block) () -> Void) {
-        // 执行任务，使用 DispatchTime 作为时间参数。
-        execute(label: label, time: deadline, execute: work)
-    }
-    
-    public func execute(label: String, wallDeadline: DispatchWallTime, execute work: @escaping @convention(block) () -> Void) {
-        // 执行任务，使用 DispatchWallTime 作为时间参数。
-        execute(label: label, time: wallDeadline, execute: work)
-    }
-    
-    private func execute<T: Comparable>(label: String, time: T, execute work: @escaping @convention(block) () -> Void) {
-        lock.around {
-            // 取消已有的任务。
-            workItems[label]?.cancel()
-            // 执行任务并移除任务。
-            let workItem = DispatchWorkItem { [weak self] in
-                work()
-                self?.workItems.removeValue(forKey: label)
+    public func execute(on queue: DispatchQueue = .main, work: @escaping @convention(block) () -> Void) {
+        dispatchQueue.sync {
+            workItem?.cancel()
+            let workItem = DispatchWorkItem { [weak self, weak queue] in
+                queue?.async {
+                    work()
+                }
+                self?.workItem = nil
             }
-            // 存储新的任务。
-            workItems[label] = workItem
-            if let time = time as? DispatchTime {
-                // 使用 DispatchTime 延迟执行任务。
-                queue.asyncAfter(deadline: time, execute: workItem)
-            } else if let time = time as? DispatchWallTime {
-                // 使用 DispatchWallTime 延迟执行任务。
-                queue.asyncAfter(wallDeadline: time, execute: workItem)
-            }
+            self.workItem = workItem
+            dispatchQueue.asyncAfter(deadline: .now() + timeInterval, execute: workItem)
         }
     }
+    
 }

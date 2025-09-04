@@ -62,7 +62,7 @@ public class ZYGDLCache {
         ioQueue = DispatchQueue(label: ioQueueName, autoreleaseFrequency: .workItem)
         
         // 初始化 debouncer，使用 ioQueue 作为队列。
-        debouncer = ZYGDLDebouncer(queue: ioQueue)
+        debouncer = ZYGDLDebouncer(timeInterval: .milliseconds(200))
         
         let cacheName = "com.ZYG.Downloaded.Cache.\(identifier)"
         
@@ -267,7 +267,7 @@ extension ZYGDLCache {
     
     // 存储下载任务的方法。
     internal func storeTasks(_ tasks: [ZYGDLDownloadTask]) {
-        debouncer.execute(label: "storeTasks", wallDeadline: .now() + 0.2) {
+        debouncer.execute(on: ioQueue) {
             var path = (self.downloadPath as NSString).appendingPathComponent("\(self.identifier)_Tasks.plist")
             do {
                 let data = try self.encoder.encode(tasks)

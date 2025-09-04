@@ -138,12 +138,7 @@ public class ZYGDLDownloadTask: ZYGDLTask<ZYGDLDownloadTask> {
         try super.encode(to: superEncoder)
         try container.encodeIfPresent(resumeData, forKey: .resumeData)
         if let response = response {
-            let responseData: Data
-            if #available(iOS 11.0, *) {
-                responseData = try NSKeyedArchiver.archivedData(withRootObject: (response as HTTPURLResponse), requiringSecureCoding: true)
-            } else {
-                responseData = NSKeyedArchiver.archivedData(withRootObject: (response as HTTPURLResponse))
-            }
+            let responseData: Data = try NSKeyedArchiver.archivedData(withRootObject: (response as HTTPURLResponse), requiringSecureCoding: true)
             try container.encode(responseData, forKey: .response)
         }
     }
@@ -155,11 +150,7 @@ public class ZYGDLDownloadTask: ZYGDLTask<ZYGDLDownloadTask> {
         try super.init(from: superDecoder)
         resumeData = try container.decodeIfPresent(Data.self, forKey: .resumeData)
         if let responseData = try container.decodeIfPresent(Data.self, forKey: .response) {
-            if #available(iOS 11.0, *) {
-                response = try? NSKeyedUnarchiver.unarchivedObject(ofClass: HTTPURLResponse.self, from: responseData)
-            } else {
-                response = NSKeyedUnarchiver.unarchiveObject(with: responseData) as? HTTPURLResponse
-            }
+            response = try? NSKeyedUnarchiver.unarchivedObject(ofClass: HTTPURLResponse.self, from: responseData)
         }
     }
     
@@ -240,13 +231,7 @@ extension ZYGDLDownloadTask {
         } else {
             if let resumeData = resumeData,
                 cache.retrieveTmpFile(tmpFileName) {
-                if #available(iOS 10.2, *) {
-                    sessionTask = session?.downloadTask(withResumeData: resumeData)
-                } else if #available(iOS 10.0, *) {
-                    sessionTask = session?.correctedDownloadTask(withResumeData: resumeData)
-                } else {
-                    sessionTask = session?.downloadTask(withResumeData: resumeData)
-                }
+                sessionTask = session?.downloadTask(withResumeData: resumeData)
             } else {
                 var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 0)
                 if let headers = headers {
@@ -266,14 +251,17 @@ extension ZYGDLDownloadTask {
     internal func suspend(onMainQueue: Bool = true, handler: Handler<ZYGDLDownloadTask>? = nil) {
         guard status == .running || status == .waiting else { return }
         controlExecuter = ZYGDLExecuter(onMainQueue: onMainQueue, handler: handler)
-        if status == .running {
+        switch status {
+        case .running:
             status = .willSuspend
             sessionTask?.cancel(byProducingResumeData: { _ in })
-        } else {
+        case .waiting, .suspended, .failed, .succeeded, .canceled, .removed:
             status = .willSuspend
             operationQueue.async {
                 self.didComplete(.local)
             }
+        case .willSuspend, .willCancel, .willRemove:
+            break
         }
     }
     
@@ -281,14 +269,17 @@ extension ZYGDLDownloadTask {
     internal func cancel(onMainQueue: Bool = true, handler: Handler<ZYGDLDownloadTask>? = nil) {
         guard status != .succeeded else { return }
         controlExecuter = ZYGDLExecuter(onMainQueue: onMainQueue, handler: handler)
-        if status == .running {
+        switch status {
+        case .running:
             status = .willCancel
             sessionTask?.cancel()
-        } else {
+        case .waiting, .suspended, .failed, .succeeded, .canceled, .removed:
             status = .willCancel
             operationQueue.async {
                 self.didComplete(.local)
             }
+        case .willSuspend, .willCancel, .willRemove:
+            break
         }
     }
     
@@ -296,14 +287,17 @@ extension ZYGDLDownloadTask {
     internal func remove(completely: Bool = false, onMainQueue: Bool = true, handler: Handler<ZYGDLDownloadTask>? = nil) {
         isRemoveCompletely = completely
         controlExecuter = ZYGDLExecuter(onMainQueue: onMainQueue, handler: handler)
-        if status == .running {
+        switch status {
+        case .running:
             status = .willRemove
             sessionTask?.cancel()
-        } else {
+        case .waiting, .suspended, .failed, .succeeded, .canceled, .removed:
             status = .willRemove
             operationQueue.async {
                 self.didComplete(.local)
             }
+        case .willSuspend, .willCancel, .willRemove:
+            break
         }
     }
     
@@ -387,7 +381,7 @@ extension ZYGDLDownloadTask {
             self.error = error
             var tempStatus = status
             if let resumeData = (error as NSError).userInfo[NSURLSessionDownloadTaskResumeData] as? Data {
-                self.resumeData = ZYGDLResumeDataHelper.handleResumeData(resumeData)
+                self.resumeData = resumeData
                 cache.storeTmpFile(tmpFileName)
             }
             if let _ = (error as NSError).userInfo[NSURLErrorBackgroundTaskCancelledReasonKey] as? Int {

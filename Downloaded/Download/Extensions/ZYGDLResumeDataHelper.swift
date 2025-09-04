@@ -34,48 +34,6 @@ internal enum ZYGDLResumeDataHelper {
     // 恢复数据中的根对象键。
     static let archiveRootObjectKey = "NSKeyedArchiveRootObjectKey"
     
-    // 用于处理恢复数据。
-    internal static func handleResumeData(_ data: Data) -> Data? {
-        if #available(iOS 11.3, *) {
-            return data
-        } else if #available(iOS 11.0, *) {
-            // 修复 11.0 - 11.2 bug
-            return deleteResumeByteRange(data)
-        } else if #available(iOS 10.2, *) {
-            return data
-        } else if #available(iOS 10.0, *) {
-            // 修复 10.0 - 10.1 bug
-            return correctResumeData(data)
-        } else {
-            return data
-        }
-    }
-    
-    // 用于删除恢复数据中的字节范围。
-    private static func deleteResumeByteRange(_ data: Data) -> Data? {
-        guard let resumeDictionary = getResumeDictionary(data) else { return nil }
-        resumeDictionary.removeObject(forKey: resumeByteRangeKey)
-        return try? PropertyListSerialization.data(fromPropertyList: resumeDictionary,
-                                                         format: PropertyListSerialization.PropertyListFormat.xml,
-                                                         options: PropertyListSerialization.WriteOptions())
-    }
-    
-    // 用于修复恢复数据。
-    private static func correctResumeData(_ data: Data) -> Data? {
-        guard let resumeDictionary = getResumeDictionary(data) else { return nil }
-        
-        if let currentRequest = resumeDictionary[currentRequestKey] as? Data {
-            resumeDictionary[currentRequestKey] = correct(with: currentRequest)
-        }
-        if let originalRequest = resumeDictionary[originalRequestKey] as? Data {
-            resumeDictionary[originalRequestKey] = correct(with: originalRequest)
-        }
-        
-        return try? PropertyListSerialization.data(fromPropertyList: resumeDictionary,
-                                                         format: PropertyListSerialization.PropertyListFormat.xml,
-                                                         options: PropertyListSerialization.WriteOptions())
-    }
-    
     // 用于将恢复数据解析为字典。
     internal static func getResumeDictionary(_ data: Data) -> NSMutableDictionary? {
         // In beta versions, resumeData is NSKeyedArchive encoded instead of plist
