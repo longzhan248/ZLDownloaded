@@ -80,6 +80,8 @@ public class ZYGDLCache {
         // 如果没有提供 downloadFilePath，则使用默认路径。
         self.downloadFilePath = downloadFilePath ?? (path as NSString).appendingPathComponent("ZYGDLFile")
         
+        encoder.outputFormat = .binary
+        
         // 创建缓存目录。
         createDirectory()
         

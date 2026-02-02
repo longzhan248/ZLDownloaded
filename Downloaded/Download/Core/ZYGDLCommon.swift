@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import ObjectiveC.runtime
 
 // 表示日志选项。
 public enum ZYGDLLogOption {
@@ -148,16 +149,33 @@ extension ZYGDLCompatible {
     
     // 定义一个计算属性 tr，返回一个包装了自身的 ZYGDLWrapper 实例。
     public var tr: ZYGDLWrapper<Self> {
-        get {
-            ZYGDLWrapper(self)
-        }
+        ZYGDLWrapper(self)
     }
     
     // 定义一个计算属性 tr，返回 ZYGDLWrapper 的类型。
     public static var tr: ZYGDLWrapper<Self>.Type {
-        get {
-            ZYGDLWrapper<Self>.self
-        }
+        ZYGDLWrapper<Self>.self
     }
     
+}
+
+extension URLSessionTask {
+    private struct AssociatedKeys {
+        static var zygdlTask: UInt8 = 0
+    }
+
+    internal weak var zygdlTask: ZYGDLDownloadTask? {
+        get {
+            return objc_getAssociatedObject(self, &AssociatedKeys.zygdlTask) as? ZYGDLDownloadTask
+        }
+        set {
+            if let newValue = newValue {
+                objc_setAssociatedObject(
+                    self, &AssociatedKeys.zygdlTask, newValue, .OBJC_ASSOCIATION_ASSIGN)
+            } else {
+                objc_setAssociatedObject(
+                    self, &AssociatedKeys.zygdlTask, nil, .OBJC_ASSOCIATION_ASSIGN)
+            }
+        }
+    }
 }

@@ -27,7 +27,10 @@ public class ZYGDLDownloadTask: ZYGDLTask<ZYGDLDownloadTask> {
             _sessionTask?.removeObserver(self, forKeyPath: "currentRequest")
         }
         didSet {
-            _sessionTask?.addObserver(self, forKeyPath: "currentRequest", options: [.new], context: nil)
+            _sessionTask?.addObserver(
+                self, forKeyPath: "currentRequest", options: [.new], context: nil
+            )
+            _sessionTask?.zygdlTask = self
         }
     }
     
@@ -125,10 +128,12 @@ public class ZYGDLDownloadTask: ZYGDLTask<ZYGDLDownloadTask> {
         if let fileName = fileName, !fileName.isEmpty {
             self.fileName = fileName
         }
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(fixDelegateMethodError),
-                                               name: UIApplication.didBecomeActiveNotification,
-                                               object: nil)
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(fixDelegateMethodError),
+            name: UIApplication.didBecomeActiveNotification,
+            object: nil
+        )
     }
     
     // 实现编码方法。
@@ -136,8 +141,9 @@ public class ZYGDLDownloadTask: ZYGDLTask<ZYGDLDownloadTask> {
         var container = encoder.container(keyedBy: CodingKeys.self)
         let superEncoder = container.superEncoder()
         try super.encode(to: superEncoder)
-        try container.encodeIfPresent(resumeData, forKey: .resumeData)
-        if let response = response {
+        let downloadState = protectedDownloadState.read { $0 }
+        try container.encodeIfPresent(downloadState.resumeData, forKey: .resumeData)
+        if let response = downloadState.response {
             let responseData: Data = try NSKeyedArchiver.archivedData(withRootObject: (response as HTTPURLResponse), requiringSecureCoding: true)
             try container.encode(responseData, forKey: .response)
         }
@@ -521,11 +527,13 @@ extension ZYGDLDownloadTask {
 // MARK: - callback
 extension ZYGDLDownloadTask {
     
-    internal func didWriteData(bytesWritten: Int64,
+    internal func didWriteData(downloadTask: URLSessionDownloadTask,
+                               bytesWritten: Int64,
                                totalBytesWritten: Int64,
                                totalBytesExpectedToWrite: Int64) {
         progress.completedUnitCount = totalBytesWritten
         progress.totalUnitCount = totalBytesExpectedToWrite
+        response = downloadTask.response as? HTTPURLResponse
         progressExecuter?.execute(self)
         manager?.updateProgress()
         NotificationCenter.default.postNotification(name: ZYGDLDownloadTask.runningNotification, downloadTask: self)
