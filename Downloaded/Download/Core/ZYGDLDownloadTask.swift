@@ -564,10 +564,12 @@ extension ZYGDLDownloadTask {
                 do {
                     try fileManager.createDirectory(at: destinationURL, withIntermediateDirectories: true, attributes: nil)
                     try fileManager.unzipItem(at: sourceURL, to: destinationURL)
-                    cache.storeFile(at: destinationURL, to: destinationURL)
+                    // 解压目录已经位于最终缓存路径，不再移动到自身。
                     cache.removeTmpFile(tmpFileName)
                 } catch {
-                    print("Extraction of ZIP archive failed with error:\(error)")
+                    // 等待 URLSession 完成事件统一进入失败状态，避免重复回调。
+                    self.error = error
+                    try? fileManager.removeItem(at: destinationURL)
                 }
                 return
             default:
@@ -613,6 +615,9 @@ extension ZYGDLDownloadTask {
                 } else if !isAcceptable {
                     response = task.response as? HTTPURLResponse
                     determineStatus(with: .statusCode(statusCode))
+                } else if let extractionError = self.error {
+                    // HTTP 成功不代表 ZIP 解压成功，不将不完整目录标记为成功缓存。
+                    determineStatus(with: .error(extractionError))
                 } else {
                     resumeData = nil
                     succeeded(fromRunning: true, immediately: true)
