@@ -1,3 +1,12 @@
+/*
+ * 公司版权声明: Copyright (c) 广州心娱网络科技有限公司. All rights reserved.
+ * 开发人员: 詹龙 zhanlong@yunqi688.com
+ * 员工工号: XY-0398
+ * 内部IM ID: 957
+ * 手机尾号: 5352
+ * 创建日期: 2026-10-14
+ */
+
 //
 //  ZYGDLBGSessionManager.swift
 //  ZygoteNetwork
@@ -8,7 +17,22 @@
 import UIKit
 import ZLDownloaded
 
-@objcMembers public class ZYGDLBGSessionManager: NSObject {
+// 在下载队列调用协议转换，支持自定义 URLConvertible，避免强制类型转换。
+private struct ZYGDLBGAsyncURLConvertible: ZYGDLURLConvertible {
+    let value: ZYGDLBGURLConvertible
+    func asURL() throws -> URL { return try value.bg_asURL() }
+}
+
+/// 业务完成代理；不替换 URLSession 的内部代理，也不覆盖现有任务闭包。
+@objc public protocol ZYGDLBGSessionManagerDownloadDelegate: AnyObject {
+    /// 主线程异步回调，业务方按 URL 和当前订阅状态处理重试及重复事件。
+    func downloadManager(_ manager: ZYGDLBGSessionManager, didComplete task: ZYGDLBGDownloadTask)
+}
+
+@objcMembers public class ZYGDLBGSessionManager: NSObject, ZYGDLSessionManagerDownloadDelegate {
+    /// 弱引用代理，请在主线程设置。
+    public weak var downloadDelegate: ZYGDLBGSessionManagerDownloadDelegate?
+
     
     private let sessionManager: ZYGDLSessionManager
     
@@ -42,7 +66,30 @@ import ZLDownloaded
         return ZYGDLBGStatus(sessionManager.status)
     }
     
-    public private(set) var tasks: [ZYGDLBGDownloadTask] = []
+    private let tasksLock = NSLock()
+    private var storedTasks: [ZYGDLBGDownloadTask] = []
+
+    public var tasks: [ZYGDLBGDownloadTask] {
+        tasksLock.lock()
+        defer { tasksLock.unlock() }
+        return storedTasks
+    }
+
+    private func bridgeTask(_ task: ZYGDLDownloadTask) -> ZYGDLBGDownloadTask {
+        tasksLock.lock()
+        defer { tasksLock.unlock() }
+        if let existing = storedTasks.first(where: { $0.downloadTask === task }) { return existing }
+        let wrapped = ZYGDLBGDownloadTask(task)
+        storedTasks.append(wrapped)
+        return wrapped
+    }
+
+    private func removeBridgeTasks(url: URL? = nil) {
+        tasksLock.lock()
+        defer { tasksLock.unlock() }
+        if let url = url { storedTasks.removeAll { $0.url == url } }
+        else { storedTasks.removeAll() }
+    }
     
     
     public var completedTasks: [ZYGDLBGDownloadTask] {
@@ -78,7 +125,8 @@ import ZLDownloaded
         sessionManager = ZYGDLSessionManager(identifier, configuration: config, cache:self.cache.cache, operationQueue: operationQueue)
         self.configuration.sessionManager = sessionManager
         super.init()
-        tasks = sessionManager.tasks.map { ZYGDLBGDownloadTask($0) }
+        storedTasks = sessionManager.tasks.map { ZYGDLBGDownloadTask($0) }
+        sessionManager.downloadDelegate = self
         
     }
     
@@ -102,8 +150,7 @@ import ZLDownloaded
                          headers: [String: String]?,
                          fileName: String?) -> ZYGDLBGDownloadTask? {
         if let downloadTask = sessionManager.download(asURLConvertible(url), headers: headers, fileName: fileName) {
-            let convertDownloadTask = ZYGDLBGDownloadTask(downloadTask)
-            tasks.append(convertDownloadTask)
+            let convertDownloadTask = bridgeTask(downloadTask)
             return convertDownloadTask
         } else {
             return nil
@@ -117,14 +164,40 @@ import ZLDownloaded
 
     
     
+    /// 非阻塞下载入口；prepared 在主线程异步回调一次，随后接收完成代理事件。
+    /// 无效 URL 返回 nil 和错误。相同底层任务复用同一个桥接对象。
+    public func downloadAsync(url: ZYGDLBGURLConvertible,
+                              headers: [String: String]?,
+                              fileName: String?,
+                              prepared: @escaping (ZYGDLBGDownloadTask?, NSError?) -> Void) {
+        sessionManager.downloadAsync(ZYGDLBGAsyncURLConvertible(value: url), headers: headers, fileName: fileName) { task, error in
+            guard let task = task else {
+                prepared(nil, error.map { $0 as NSError })
+                return
+            }
+            prepared(self.bridgeTask(task), nil)
+        }
+    }
+
+    public func downloadAsync(url: ZYGDLBGURLConvertible,
+                              prepared: @escaping (ZYGDLBGDownloadTask?, NSError?) -> Void) {
+        downloadAsync(url: url, headers: nil, fileName: nil, prepared: prepared)
+    }
+
+    @nonobjc public func downloadManager(_ manager: ZYGDLSessionManager, didComplete task: ZYGDLDownloadTask) {
+        guard let delegate = downloadDelegate else { return }
+        // 终态移除后不重新插入桥接任务集合。
+        let wrapped = tasks.first { $0.downloadTask === task } ?? ZYGDLBGDownloadTask(task)
+        delegate.downloadManager(self, didComplete: wrapped)
+    }
+
     @discardableResult
     public func multiDownload(urls: [ZYGDLBGURLConvertible],
                               headers: [[String: String]]?,
                               fileNames: [String]?) -> [ZYGDLBGDownloadTask] {
         let convertURLs = urls.map { asURLConvertible($0) }
         let downloadTasks = sessionManager.multiDownload(convertURLs, headersArray: headers, fileNames: fileNames)
-        let convertDownloadTasks = downloadTasks.map { ZYGDLBGDownloadTask($0) }
-        tasks.append(contentsOf: convertDownloadTasks)
+        let convertDownloadTasks = downloadTasks.map { bridgeTask($0) }
         return convertDownloadTasks
     }
     
@@ -169,7 +242,7 @@ import ZLDownloaded
 
     public func cancel(url: ZYGDLBGURLConvertible, onMainQueue: Bool, handler: Handler<ZYGDLBGDownloadTask>?) {
         guard let task = fetchTask(url: url) else { return }
-        tasks.removeAll { $0.url == task.url}
+        removeBridgeTasks(url: task.url)
         sessionManager.cancel(asURLConvertible(url), onMainQueue: onMainQueue) { [weak self] _ in
             if let task = self?.fetchTask(url: url) {
                 handler?(task)
@@ -183,7 +256,7 @@ import ZLDownloaded
     
     public func remove(url: ZYGDLBGURLConvertible, completely: Bool, onMainQueue: Bool, handler: Handler<ZYGDLBGDownloadTask>?) {
         guard let task = fetchTask(url: url) else { return }
-        tasks.removeAll { $0.url == task.url}
+        removeBridgeTasks(url: task.url)
         sessionManager.remove(asURLConvertible(url), completely: completely, onMainQueue: onMainQueue) { [weak self] _ in
             if let task = self?.fetchTask(url: url) {
                  handler?(task)
@@ -213,7 +286,7 @@ import ZLDownloaded
     }
     
     public func totalCancel(onMainQueue: Bool, handler: Handler<ZYGDLBGSessionManager>?) {
-        tasks.removeAll()
+        removeBridgeTasks()
         sessionManager.totalCancel(onMainQueue: onMainQueue) { [weak self] _ in
             guard let self = self else { return }
             handler?(self)
@@ -225,7 +298,7 @@ import ZLDownloaded
     }
     
     public func totalRemove(completely: Bool, onMainQueue: Bool, handler: Handler<ZYGDLBGSessionManager>?) {
-        tasks.removeAll()
+        removeBridgeTasks()
         sessionManager.totalRemove(completely: completely, onMainQueue: onMainQueue) { [weak self] _ in
             guard let self = self else { return }
             handler?(self)

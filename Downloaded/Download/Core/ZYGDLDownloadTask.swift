@@ -1,3 +1,12 @@
+/*
+ * 公司版权声明: Copyright (c) 广州心娱网络科技有限公司. All rights reserved.
+ * 开发人员: 詹龙 zhanlong@yunqi688.com
+ * 员工工号: XY-0398
+ * 内部IM ID: 957
+ * 手机尾号: 5352
+ * 创建日期: 2026-10-14
+ */
+
 //
 //  ZYGDLDownloadTask.swift
 //  ZygoteNetwork
@@ -468,6 +477,7 @@ extension ZYGDLDownloadTask {
         } else {
             failureExecuter?.execute(self)
         }
+        manager?.notifyDownloadDelegate(self)
         NotificationCenter.default.postNotification(name: ZYGDLDownloadTask.didCompleteNotification, downloadTask: self)
     }
     

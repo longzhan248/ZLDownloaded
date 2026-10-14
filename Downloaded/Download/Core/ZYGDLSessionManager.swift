@@ -1,3 +1,12 @@
+/*
+ * 公司版权声明: Copyright (c) 广州心娱网络科技有限公司. All rights reserved.
+ * 开发人员: 詹龙 zhanlong@yunqi688.com
+ * 员工工号: XY-0398
+ * 内部IM ID: 957
+ * 手机尾号: 5352
+ * 创建日期: 2026-10-14
+ */
+
 //
 //  ZYGDLSessionManager.swift
 //  ZygoteNetwork
@@ -17,6 +26,9 @@ public class ZYGDLSessionManager {
         case removeRunningTasks(ZYGDLDownloadTask)
     }
     
+    /// 完成事件异步发送到主线程；请在主线程设置，弱引用持有。
+    public weak var downloadDelegate: ZYGDLSessionManagerDownloadDelegate?
+
     public let operationQueue: DispatchQueue
     
     public let cache: ZYGDLCache
@@ -349,20 +361,7 @@ extension ZYGDLSessionManager {
             let validURL = try url.asURL()
             var task: ZYGDLDownloadTask!
             operationQueue.sync {
-                task = fetchTask(validURL)
-                if let task = task {
-                    task.update(headers, newFileName: fileName)
-                } else {
-                    task = ZYGDLDownloadTask(validURL,
-                                             headers: headers,
-                                             fileName: fileName,
-                                             cache: cache,
-                                             operationQueue: operationQueue)
-                    task.manager = self
-                    task.session = session
-                    maintainTasks(with: .append(task))
-                }
-                storeTasks()
+                task = prepareDownload(validURL, headers: headers, fileName: fileName)
                 start(task, onMainQueue: onMainQueue, handler: handler)
             }
             return task
@@ -372,6 +371,22 @@ extension ZYGDLSessionManager {
         }
     }
     
+    // 仅由 operationQueue 调用；异步入口不能再次进入同步下载入口。
+    internal func prepareDownload(_ url: URL, headers: [String: String]?, fileName: String?) -> ZYGDLDownloadTask {
+        let task: ZYGDLDownloadTask
+        if let existing = fetchTask(url) {
+            task = existing
+            task.update(headers, newFileName: fileName)
+        } else {
+            task = ZYGDLDownloadTask(url, headers: headers, fileName: fileName, cache: cache, operationQueue: operationQueue)
+            task.manager = self
+            task.session = session
+            maintainTasks(with: .append(task))
+        }
+        storeTasks()
+        return task
+    }
+
     /// 批量开启多个下载任务, 所有任务都会并发下载
     ///
     /// - Parameters:
