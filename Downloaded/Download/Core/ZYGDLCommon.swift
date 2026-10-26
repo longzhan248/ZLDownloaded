@@ -1,3 +1,10 @@
+// 公司版权声明: Copyright (c) 广州心娱网络科技有限公司. All rights reserved.
+// 开发人员: 詹龙 zhanlong@yunqi688.com
+// 员工工号: XY-0398
+// 内部IM ID: 957
+// 手机尾号: 5352
+// 创建日期: 2026-10-26
+//
 //
 //  ZYGDLCommon.swift
 //  ZygoteNetwork
@@ -159,23 +166,32 @@ extension ZYGDLCompatible {
     
 }
 
+// 关联对象只强持有容器；容器以真正的弱引用跟踪业务任务，释放后自动置空。
+private final class ZYGDLWeakDownloadTaskReference: NSObject {
+    weak var task: ZYGDLDownloadTask?
+
+    init(_ task: ZYGDLDownloadTask) {
+        self.task = task
+        super.init()
+    }
+}
+
 extension URLSessionTask {
     private struct AssociatedKeys {
         static var zygdlTask: UInt8 = 0
     }
 
-    internal weak var zygdlTask: ZYGDLDownloadTask? {
+    internal var zygdlTask: ZYGDLDownloadTask? {
         get {
-            return objc_getAssociatedObject(self, &AssociatedKeys.zygdlTask) as? ZYGDLDownloadTask
+            let reference = objc_getAssociatedObject(
+                self, &AssociatedKeys.zygdlTask) as? ZYGDLWeakDownloadTaskReference
+            return reference?.task
         }
         set {
-            if let newValue = newValue {
-                objc_setAssociatedObject(
-                    self, &AssociatedKeys.zygdlTask, newValue, .OBJC_ASSOCIATION_ASSIGN)
-            } else {
-                objc_setAssociatedObject(
-                    self, &AssociatedKeys.zygdlTask, nil, .OBJC_ASSOCIATION_ASSIGN)
-            }
+            let reference = newValue.map { ZYGDLWeakDownloadTaskReference($0) }
+            // 使用原子关联策略，让并发替换容器时的读取仍持有有效容器。
+            objc_setAssociatedObject(
+                self, &AssociatedKeys.zygdlTask, reference, .OBJC_ASSOCIATION_RETAIN)
         }
     }
 }
