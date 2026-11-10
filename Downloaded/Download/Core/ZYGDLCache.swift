@@ -1,3 +1,9 @@
+// 公司版权声明: Copyright (c) 广州心娱网络科技有限公司. All rights reserved.
+// 开发人员: 詹龙 zhanlong@yunqi688.com
+// 员工工号: XY-0398
+// 内部IM ID: 957
+// 手机尾号: 5352
+// 创建日期: 2026-11-10
 //
 //  ZYGDLCache.swift
 //  ZygoteNetwork
@@ -6,6 +12,7 @@
 //
 
 import UIKit
+import Darwin
 
 public class ZYGDLCache {
     
@@ -80,7 +87,7 @@ public class ZYGDLCache {
         // 如果没有提供 downloadFilePath，则使用默认路径。
         self.downloadFilePath = downloadFilePath ?? (path as NSString).appendingPathComponent("ZYGDLFile")
         
-        encoder.outputFormat = .binary
+        encoder.outputFormat = .xml
         
         // 创建缓存目录。
         createDirectory()
@@ -272,9 +279,7 @@ extension ZYGDLCache {
         debouncer.execute(on: ioQueue) {
             var path = (self.downloadPath as NSString).appendingPathComponent("\(self.identifier)_Tasks.plist")
             do {
-                let data = try self.encoder.encode(tasks)
-                let url = URL(fileURLWithPath: path)
-                try data.write(to: url)
+                try self.writeTasks(tasks, to: URL(fileURLWithPath: path))
             } catch {
                 self.manager?.log(.error("store tasks failed",
                                          error: ZYGDLError.cacheError(reason: .cannotEncodeTasks(path: path, error: error))))
@@ -284,6 +289,50 @@ extension ZYGDLCache {
         }
     }
     
+    // 全量任务不再聚合为单个 Data，避免最终 plist 扩容需要大块连续内存。
+    // XML plist 与旧二进制 plist 使用相同字段，现有解码器可同时读取。
+    private func writeTasks(_ tasks: [ZYGDLDownloadTask], to url: URL) throws {
+        let temporaryURL = url.deletingLastPathComponent().appendingPathComponent(UUID().uuidString + ".tmp")
+        defer { try? fileManager.removeItem(at: temporaryURL) }
+        guard let stream = OutputStream(url: temporaryURL, append: false) else {
+            throw CocoaError(.fileWriteUnknown)
+        }
+        stream.open()
+        defer { stream.close() }
+
+        func write(_ data: Data) throws {
+            try data.withUnsafeBytes { (buffer: UnsafeRawBufferPointer) in
+                guard let bytes = buffer.baseAddress?.assumingMemoryBound(to: UInt8.self) else { return }
+                var offset = 0
+                while offset < buffer.count {
+                    let count = stream.write(bytes.advanced(by: offset), maxLength: buffer.count - offset)
+                    guard count > 0 else { throw stream.streamError ?? CocoaError(.fileWriteUnknown) }
+                    offset += count
+                }
+            }
+        }
+
+        try write(Data("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<plist version=\"1.0\"><array>\n".utf8))
+        for task in tasks {
+            try autoreleasepool {
+                // 由系统编码器处理字段转义、Data 和数值，仅移除单元素数组的外层封装。
+                let data = try encoder.encode([task])
+                guard let start = data.range(of: Data("<array>".utf8)),
+                      let end = data.range(of: Data("</array>".utf8), options: .backwards),
+                      start.upperBound <= end.lowerBound else {
+                    throw CocoaError(.propertyListWriteInvalid)
+                }
+                try write(data.subdata(in: start.upperBound..<end.lowerBound))
+            }
+        }
+        try write(Data("</array></plist>\n".utf8))
+        stream.close()
+        // 同目录 rename 原子替换，编码或写入失败时保留上次有效缓存。
+        guard rename(temporaryURL.path, url.path) == 0 else {
+            throw NSError(domain: NSPOSIXErrorDomain, code: Int(errno))
+        }
+    }
+
     // 存储文件的方法。
     internal func storeFile(at srcURL: URL, to dstURL: URL) {
         ioQueue.sync {
