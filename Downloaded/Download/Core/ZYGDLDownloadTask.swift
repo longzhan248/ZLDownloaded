@@ -23,6 +23,7 @@ public class ZYGDLDownloadTask: ZYGDLTask<ZYGDLDownloadTask> {
     private enum CodingKeys: CodingKey {
         case resumeData
         case response
+        case responseSnapshot
     }
     
     // 表示可接受的状态码范围。
@@ -59,7 +60,12 @@ public class ZYGDLDownloadTask: ZYGDLTask<ZYGDLDownloadTask> {
             protectedDownloadState.directValue.response
         }
         set {
-            protectedDownloadState.write { $0.response = newValue }
+            // 响应接收时提取值，缓存线程不再归档 CFNetwork 响应对象。
+            let snapshot = newValue.flatMap { ZYGDLResponseSnapshot(response: $0) }
+            protectedDownloadState.write {
+                $0.response = newValue
+                $0.responseSnapshot = snapshot
+            }
         }
     }
     
@@ -93,6 +99,7 @@ public class ZYGDLDownloadTask: ZYGDLTask<ZYGDLDownloadTask> {
             }
         }
         var response: HTTPURLResponse?
+        var responseSnapshot: ZYGDLResponseSnapshot?
         var tmpFileName: String?
         var shouldValidateFile: Bool = false
     }
@@ -152,10 +159,7 @@ public class ZYGDLDownloadTask: ZYGDLTask<ZYGDLDownloadTask> {
         try super.encode(to: superEncoder)
         let downloadState = protectedDownloadState.read { $0 }
         try container.encodeIfPresent(downloadState.resumeData, forKey: .resumeData)
-        if let response = downloadState.response {
-            let responseData: Data = try NSKeyedArchiver.archivedData(withRootObject: (response as HTTPURLResponse), requiringSecureCoding: true)
-            try container.encode(responseData, forKey: .response)
-        }
+        try container.encodeIfPresent(downloadState.responseSnapshot, forKey: .responseSnapshot)
     }
     
     // 实现解码方法。
@@ -164,7 +168,9 @@ public class ZYGDLDownloadTask: ZYGDLTask<ZYGDLDownloadTask> {
         let superDecoder = try container.superDecoder()
         try super.init(from: superDecoder)
         resumeData = try container.decodeIfPresent(Data.self, forKey: .resumeData)
-        if let responseData = try container.decodeIfPresent(Data.self, forKey: .response) {
+        if let snapshot = try container.decodeIfPresent(ZYGDLResponseSnapshot.self, forKey: .responseSnapshot) {
+            response = snapshot.makeResponse()
+        } else if let responseData = try container.decodeIfPresent(Data.self, forKey: .response) {
             response = try? NSKeyedUnarchiver.unarchivedObject(ofClass: HTTPURLResponse.self, from: responseData)
         }
     }
@@ -661,4 +667,26 @@ extension Array where Element == ZYGDLDownloadTask {
         return self
     }
     
+}
+
+// 持久化只保存响应值，保留运行中的原始响应供业务访问。
+internal struct ZYGDLResponseSnapshot: Codable {
+    let url: URL
+    let statusCode: Int
+    let headers: [String: String]
+
+    init?(response: HTTPURLResponse) {
+        guard let url = response.url else { return nil }
+        self.url = url
+        statusCode = response.statusCode
+        var headers: [String: String] = [:]
+        for (key, value) in response.allHeaderFields {
+            headers[String(describing: key)] = String(describing: value)
+        }
+        self.headers = headers
+    }
+
+    func makeResponse() -> HTTPURLResponse? {
+        HTTPURLResponse(url: url, statusCode: statusCode, httpVersion: nil, headerFields: headers)
+    }
 }
